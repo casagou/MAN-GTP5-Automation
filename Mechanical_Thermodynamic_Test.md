@@ -110,6 +110,8 @@ result "proDAS Mode set to ON", REPORT & "Set Point", BLACK
 
 
 
+
+
 '******************************************************************************
 '************************************ TO GG1 PT1 ******************************done
 '******************************************************************************
@@ -499,11 +501,11 @@ result " ", REPORT
 
 
 '******************************************************************************
-'************************************ TO GG2 PT1 ******************************xxx
+'************************************ TO GG2 PT1 ******************************done
 '******************************************************************************
 
 
-caution "-- GG1 Curve --"
+caution "-- GG2 Curve --"
 instruction "*** Go to GG2_PT1", skip
 
 
@@ -602,43 +604,76 @@ result " ", REPORT
 
 
 '******************************************************************************
-'************************************ TO GG2 PT2 ******************************
+'************************************ TO GG2 PT2 ******************************done
 '******************************************************************************
+
 
 instruction "*** Go to GG2_PT2", skip
 
+
+'********** ISO speed targets **********
+
+note "1- Set ISO GG speed and ISO PT speed targets"
+result "Setting ISO GG1 speed and ISO PT1 speed targets..."
 set_channel GG_PT_Selector, 6
 do_fullset 0
 result "Going to GG speed ISO target = " &cv_GG_Target_ISO &" rpm and PT speed ISO target = " &cv_PT_Target_ISO &" rpm", REPORT & "Set Point", BLACK
-delay 10
+delay 5
 
-result "Estimating Mechanical PT Speed targets ..."
-note "PT Speed targets"
+
+'********** Mechanical PT speed targets **********
+
+note "2- Estimate Mechanical PT Speed target"
+result "Estimating Mechanical PT Speed target ..."
 do_fullset 0
-
 result "     * Estimated PT speed target = " &cv_PT_Target &" rpm", REPORT & "Set Point", BLUE
+delay 5
 
-delay 10
 
+'********** Send Mechanical PT speed set point to FCS **********
+
+note "3- Send Mechanical PT speed set point to FCS"
+result "Sending Mechanical PT speed set point to FCS..."
 set_channel FCS_N_PT_Set_Cmd, cv_PT_Target
+result "Speed set point to FCS sent."
 
+
+'********** Wait for GT Engine to reach ISO PT speed target **********
+
+note "4- Wait GT Engine to reach ISO PT speed target"
+result "Waiting GT Engine to reach ISO PT speed target..."
 wait "N_PT_ISO = " &cv_PT_Target_ISO, 300, 5, TOC, 5, "Timout", SKIP, "PT is out of range"
+result "Speed target monitoring completed."
 
+'********** Buzzer indication **********
+
+note "5- Buzzer"
+result "Buzzing..."
 set_channel Buzzer_Enable_SW, 1
 delay 1
 set_channel Buzzer_Enable_SW, 0
+result "Buzzer OFF"
 
+
+'********** Stabilization duration **********
+
+note "6- Stabilization"
+result "Stabilizing..."
 set_channel Stabilization_Status, 1
 result "Stabilizing - Minimum 3 minutes ...", REPORT & "Stabilization", BLACK
 delay 240
 result "Stabilization completed", REPORT & "Stabilization", GREEN
 set_channel Stabilization_Status, 0
-delay 10
+result "Stabilization completed."
 
 
+'********** Fullset recording **********
+
+note "7- Record Steady-State measurement (fullset)"
+result "Recording Steady-State measurement (fullset)..."
 set_channel Recording_Status, 1
 delay 1
-do_fullset 10, "Thermodynamic measurement: N_GG2 N_PT2", "GG1_PT2"
+do_fullset 10, "Thermodynamic measurement: N_GG2 N_PT2", "GG2_PT2"
 result "A steady-state measurement has been taken automatically", REPORT & "Fullset", BLACK
 result "     * GG speed ISO =" &fv_N_GG_ISO &" rpm", REPORT & "Fullset", BLUE
 result "         ** GG target offset =" &FormatNumber(fv_N_GG_ISO-fv_GG_Target_ISO,0) & " rpm", REPORT & "Fullset", RED
@@ -648,94 +683,92 @@ result "     * Power ISO =" &fv_Pow_ISO &" kW", REPORT & "Fullset", BLUE
 result "     * Efficiency ISO =" &fv_Eta_ISO &" %", REPORT & "Fullset", BLUE
 result "     * T4 ISO =" &fv_T4_ISO &" degC", REPORT & "Fullset", BLUE
 set_channel Recording_Status, 0
-delay 10
+result "Fullset recording completed."
 
-note "Example with additional fullsets"
-note" "
 
-prompt_boo "Would you like to record a second measurement point?", booFullset
+'********** Point completed **********
 
-If booFullset = true Then
-result "A second measurement is recorded ...", REPORT & "Fullset", RED
-set_channel Recording_Status, 1
-delay 1
-do_fullset 1, "Thermodynamic measurement: N_GG1 N_PT2", "GG1_PT2"
-result "A steady-state measurement has been taken automatically", REPORT & "Fullset", BLACK
-result "     * GG speed ISO =" &fv_N_GG_ISO &" rpm", REPORT & "Fullset", BLUE
-result "         ** GG target offset =" &FormatNumber(fv_N_GG_ISO-fv_GG_Target_ISO,0) & " rpm", REPORT & "Fullset", RED
-result "     * GG speed ISO =" &fv_N_PT_ISO &" rpm", REPORT & "Fullset", BLUE
-result "         ** GG target offset =" &FormatNumber(fv_N_PT_ISO-fv_PT_Target_ISO,0) & " rpm", REPORT & "Fullset", RED
-result "     * Power ISO =" &fv_Pow_ISO &" kW", REPORT & "Fullset", BLUE
-result "     * Efficiency ISO =" &fv_Eta_ISO &" %", REPORT & "Fullset", BLUE
-result "     * T4 ISO =" &fv_T4_ISO &" degC", REPORT & "Fullset", BLUE
-set_channel Recording_Status, 0
-
-prompt_boo "Would you like to record a third measurement point?", booFullset
-
-If booFullset = true Then
-result "A third measurement is recorded ...", REPORT & "Fullset", RED
-set_channel Recording_Status, 1
-delay 1
-do_fullset 1, "Thermodynamic measurement: N_GG1 N_PT2", "GG1_PT2"
-result "A steady-state measurement has been taken automatically", REPORT & "Fullset", BLACK
-result "     * GG speed ISO =" &fv_N_GG_ISO &" rpm", REPORT & "Fullset", BLUE
-result "         ** GG target offset =" &FormatNumber(fv_N_GG_ISO-fv_GG_Target_ISO,0) & " rpm", REPORT & "Fullset", RED
-result "     * GG speed ISO =" &fv_N_PT_ISO &" rpm", REPORT & "Fullset", BLUE
-result "         ** GG target offset =" &FormatNumber(fv_N_PT_ISO-fv_PT_Target_ISO,0) & " rpm", REPORT & "Fullset", RED
-result "     * Power ISO =" &fv_Pow_ISO &" kW", REPORT & "Fullset", BLUE
-result "     * Efficiency ISO =" &fv_Eta_ISO &" %", REPORT & "Fullset", BLUE
-result "     * T4 ISO =" &fv_T4_ISO &" degC", REPORT & "Fullset", BLUE
-set_channel Recording_Status, 0
-
-End If
-End If
-
+note "8- Point completed"
 set_channel PointCompleted_Status, 1
 delay 5
-result "Thermodynamic measurement GG2_PT2 completed", REPORT & "Fullset", GREEN
+result "Thermodynamic measurement GG1_PT4 completed", REPORT & "Fullset", GREEN
 set_channel PointCompleted_Status, 0
 result " ", REPORT
 result " ", REPORT
 
 
+
 '******************************************************************************
-'************************************ TO GG2 PT3 ******************************
+'************************************ TO GG2 PT3 ******************************done
 '******************************************************************************
+
 
 instruction "*** Go to GG2_PT3", skip
 
+
+'********** ISO speed targets **********
+
+note "1- Set ISO GG speed and ISO PT speed targets"
+result "Setting ISO GG1 speed and ISO PT1 speed targets..."
 set_channel GG_PT_Selector, 7
 do_fullset 0
 result "Going to GG speed ISO target = " &cv_GG_Target_ISO &" rpm and PT speed ISO target = " &cv_PT_Target_ISO &" rpm", REPORT & "Set Point", BLACK
-delay 10
+delay 5
 
-result "Estimating Mechanical PT Speed targets ..."
-note "PT Speed targets"
+
+'********** Mechanical PT speed targets **********
+
+note "2- Estimate Mechanical PT Speed target"
+result "Estimating Mechanical PT Speed target ..."
 do_fullset 0
-
 result "     * Estimated PT speed target = " &cv_PT_Target &" rpm", REPORT & "Set Point", BLUE
+delay 5
 
-delay 10
 
+'********** Send Mechanical PT speed set point to FCS **********
+
+note "3- Send Mechanical PT speed set point to FCS"
+result "Sending Mechanical PT speed set point to FCS..."
 set_channel FCS_N_PT_Set_Cmd, cv_PT_Target
+result "Speed set point to FCS sent."
 
+
+'********** Wait for GT Engine to reach ISO PT speed target **********
+
+note "4- Wait GT Engine to reach ISO PT speed target"
+result "Waiting GT Engine to reach ISO PT speed target..."
 wait "N_PT_ISO = " &cv_PT_Target_ISO, 300, 5, TOC, 5, "Timout", SKIP, "PT is out of range"
+result "Speed target monitoring completed."
 
+'********** Buzzer indication **********
+
+note "5- Buzzer"
+result "Buzzing..."
 set_channel Buzzer_Enable_SW, 1
 delay 1
 set_channel Buzzer_Enable_SW, 0
+result "Buzzer OFF"
 
+
+'********** Stabilization duration **********
+
+note "6- Stabilization"
+result "Stabilizing..."
 set_channel Stabilization_Status, 1
 result "Stabilizing - Minimum 3 minutes ...", REPORT & "Stabilization", BLACK
 delay 240
 result "Stabilization completed", REPORT & "Stabilization", GREEN
 set_channel Stabilization_Status, 0
-delay 10
+result "Stabilization completed."
 
 
+'********** Fullset recording **********
+
+note "7- Record Steady-State measurement (fullset)"
+result "Recording Steady-State measurement (fullset)..."
 set_channel Recording_Status, 1
 delay 1
-do_fullset 10, "Thermodynamic measurement: N_GG2 N_PT2", "GG1_PT2"
+do_fullset 10, "Thermodynamic measurement: N_GG2 N_PT3", "GG2_PT3"
 result "A steady-state measurement has been taken automatically", REPORT & "Fullset", BLACK
 result "     * GG speed ISO =" &fv_N_GG_ISO &" rpm", REPORT & "Fullset", BLUE
 result "         ** GG target offset =" &FormatNumber(fv_N_GG_ISO-fv_GG_Target_ISO,0) & " rpm", REPORT & "Fullset", RED
@@ -745,8 +778,12 @@ result "     * Power ISO =" &fv_Pow_ISO &" kW", REPORT & "Fullset", BLUE
 result "     * Efficiency ISO =" &fv_Eta_ISO &" %", REPORT & "Fullset", BLUE
 result "     * T4 ISO =" &fv_T4_ISO &" degC", REPORT & "Fullset", BLUE
 set_channel Recording_Status, 0
-delay 10
+result "Fullset recording completed."
 
+
+'********** Point completed **********
+
+note "8- Point completed"
 set_channel PointCompleted_Status, 1
 delay 5
 result "Thermodynamic measurement GG2_PT3 completed", REPORT & "Fullset", GREEN
@@ -757,19 +794,19 @@ result " ", REPORT
 
 
 '******************************************************************************
-'************************************ TO GG3 PT1 ******************************xxx
+'************************************ TO GG3 PT1 ******************************done
 '******************************************************************************
 
 
-caution "-- GG1 Curve --"
-instruction "*** Go to GG1_PT1", skip
+caution "-- GG3 Curve --"
+instruction "*** Go to GG3_PT1", skip
 
 
 '********** ISO speed targets **********
 
 note "1- Set ISO GG speed and ISO PT speed targets"
 result "Setting ISO GG1 speed and ISO PT1 speed targets..."
-set_channel GG_PT_Selector, 1
+set_channel GG_PT_Selector, 8
 do_fullset 0
 result "Going to GG speed ISO target = " &cv_GG_Target_ISO &" rpm and PT speed ISO target = " &cv_PT_Target_ISO &" rpm", REPORT & "Set Point", BLACK
 delay 5
@@ -834,7 +871,7 @@ note "7- Record Steady-State measurement (fullset)"
 result "Recording Steady-State measurement (fullset)..."
 set_channel Recording_Status, 1
 delay 1
-do_fullset 10, "Thermodynamic measurement: N_GG1 N_PT1", "GG1_PT1"
+do_fullset 10, "Thermodynamic measurement: N_GG3 N_PT1", "GG1_PT1"
 result "A steady-state measurement has been taken automatically", REPORT & "Fullset", BLACK
 result "     * GG speed ISO =" &fv_N_GG_ISO &" rpm", REPORT & "Fullset", BLUE
 result "         ** GG target offset =" &FormatNumber(fv_N_GG_ISO-fv_GG_Target_ISO,0) & " rpm", REPORT & "Fullset", RED
@@ -852,7 +889,7 @@ result "Fullset recording completed."
 note "8- Point completed"
 set_channel PointCompleted_Status, 1
 delay 5
-result "Thermodynamic measurement GG1_PT1 completed", REPORT & "Fullset", GREEN
+result "Thermodynamic measurement GG3_PT1 completed", REPORT & "Fullset", GREEN
 set_channel PointCompleted_Status, 0
 result " ", REPORT
 result " ", REPORT
@@ -860,43 +897,76 @@ result " ", REPORT
 
 
 '******************************************************************************
-'************************************ TO GG3 PT2 ******************************
+'************************************ TO GG3 PT2 ******************************xxx
 '******************************************************************************
+
 
 instruction "*** Go to GG3_PT2", skip
 
+
+'********** ISO speed targets **********
+
+note "1- Set ISO GG speed and ISO PT speed targets"
+result "Setting ISO GG1 speed and ISO PT1 speed targets..."
 set_channel GG_PT_Selector, 9
 do_fullset 0
 result "Going to GG speed ISO target = " &cv_GG_Target_ISO &" rpm and PT speed ISO target = " &cv_PT_Target_ISO &" rpm", REPORT & "Set Point", BLACK
-delay 10
+delay 5
 
-result "Estimating Mechanical PT Speed targets ..."
-note "PT Speed targets"
+
+'********** Mechanical PT speed targets **********
+
+note "2- Estimate Mechanical PT Speed target"
+result "Estimating Mechanical PT Speed target ..."
 do_fullset 0
-
 result "     * Estimated PT speed target = " &cv_PT_Target &" rpm", REPORT & "Set Point", BLUE
+delay 5
 
-delay 10
 
+'********** Send Mechanical PT speed set point to FCS **********
+
+note "3- Send Mechanical PT speed set point to FCS"
+result "Sending Mechanical PT speed set point to FCS..."
 set_channel FCS_N_PT_Set_Cmd, cv_PT_Target
+result "Speed set point to FCS sent."
 
+
+'********** Wait for GT Engine to reach ISO PT speed target **********
+
+note "4- Wait GT Engine to reach ISO PT speed target"
+result "Waiting GT Engine to reach ISO PT speed target..."
 wait "N_PT_ISO = " &cv_PT_Target_ISO, 300, 5, TOC, 5, "Timout", SKIP, "PT is out of range"
+result "Speed target monitoring completed."
 
+'********** Buzzer indication **********
+
+note "5- Buzzer"
+result "Buzzing..."
 set_channel Buzzer_Enable_SW, 1
 delay 1
 set_channel Buzzer_Enable_SW, 0
+result "Buzzer OFF"
 
+
+'********** Stabilization duration **********
+
+note "6- Stabilization"
+result "Stabilizing..."
 set_channel Stabilization_Status, 1
 result "Stabilizing - Minimum 3 minutes ...", REPORT & "Stabilization", BLACK
 delay 240
 result "Stabilization completed", REPORT & "Stabilization", GREEN
 set_channel Stabilization_Status, 0
-delay 10
+result "Stabilization completed."
 
 
+'********** Fullset recording **********
+
+note "7- Record Steady-State measurement (fullset)"
+result "Recording Steady-State measurement (fullset)..."
 set_channel Recording_Status, 1
 delay 1
-do_fullset 10, "Thermodynamic measurement: N_GG2 N_PT2", "GG1_PT2"
+do_fullset 10, "Thermodynamic measurement: N_GG3 N_PT2", "GG3_PT2"
 result "A steady-state measurement has been taken automatically", REPORT & "Fullset", BLACK
 result "     * GG speed ISO =" &fv_N_GG_ISO &" rpm", REPORT & "Fullset", BLUE
 result "         ** GG target offset =" &FormatNumber(fv_N_GG_ISO-fv_GG_Target_ISO,0) & " rpm", REPORT & "Fullset", RED
@@ -906,8 +976,12 @@ result "     * Power ISO =" &fv_Pow_ISO &" kW", REPORT & "Fullset", BLUE
 result "     * Efficiency ISO =" &fv_Eta_ISO &" %", REPORT & "Fullset", BLUE
 result "     * T4 ISO =" &fv_T4_ISO &" degC", REPORT & "Fullset", BLUE
 set_channel Recording_Status, 0
-delay 10
+result "Fullset recording completed."
 
+
+'********** Point completed **********
+
+note "8- Point completed"
 set_channel PointCompleted_Status, 1
 delay 5
 result "Thermodynamic measurement GG3_PT2 completed", REPORT & "Fullset", GREEN
@@ -915,6 +989,201 @@ set_channel PointCompleted_Status, 0
 result " ", REPORT
 result " ", REPORT
 
+
+
+'******************************************************************************
+'************************************ TO GG3 PT3 ******************************xxx
+'******************************************************************************
+
+
+instruction "*** Go to GG3_PT3", skip
+
+
+'********** ISO speed targets **********
+
+note "1- Set ISO GG speed and ISO PT speed targets"
+result "Setting ISO GG1 speed and ISO PT1 speed targets..."
+set_channel GG_PT_Selector, 10
+do_fullset 0
+result "Going to GG speed ISO target = " &cv_GG_Target_ISO &" rpm and PT speed ISO target = " &cv_PT_Target_ISO &" rpm", REPORT & "Set Point", BLACK
+delay 5
+
+
+'********** Mechanical PT speed targets **********
+
+note "2- Estimate Mechanical PT Speed target"
+result "Estimating Mechanical PT Speed target ..."
+do_fullset 0
+result "     * Estimated PT speed target = " &cv_PT_Target &" rpm", REPORT & "Set Point", BLUE
+delay 5
+
+
+'********** Send Mechanical PT speed set point to FCS **********
+
+note "3- Send Mechanical PT speed set point to FCS"
+result "Sending Mechanical PT speed set point to FCS..."
+set_channel FCS_N_PT_Set_Cmd, cv_PT_Target
+result "Speed set point to FCS sent."
+
+
+'********** Wait for GT Engine to reach ISO PT speed target **********
+
+note "4- Wait GT Engine to reach ISO PT speed target"
+result "Waiting GT Engine to reach ISO PT speed target..."
+wait "N_PT_ISO = " &cv_PT_Target_ISO, 300, 5, TOC, 5, "Timout", SKIP, "PT is out of range"
+result "Speed target monitoring completed."
+
+'********** Buzzer indication **********
+
+note "5- Buzzer"
+result "Buzzing..."
+set_channel Buzzer_Enable_SW, 1
+delay 1
+set_channel Buzzer_Enable_SW, 0
+result "Buzzer OFF"
+
+
+'********** Stabilization duration **********
+
+note "6- Stabilization"
+result "Stabilizing..."
+set_channel Stabilization_Status, 1
+result "Stabilizing - Minimum 3 minutes ...", REPORT & "Stabilization", BLACK
+delay 240
+result "Stabilization completed", REPORT & "Stabilization", GREEN
+set_channel Stabilization_Status, 0
+result "Stabilization completed."
+
+
+'********** Fullset recording **********
+
+note "7- Record Steady-State measurement (fullset)"
+result "Recording Steady-State measurement (fullset)..."
+set_channel Recording_Status, 1
+delay 1
+do_fullset 10, "Thermodynamic measurement: N_GG3 N_PT3", "GG3_PT3"
+result "A steady-state measurement has been taken automatically", REPORT & "Fullset", BLACK
+result "     * GG speed ISO =" &fv_N_GG_ISO &" rpm", REPORT & "Fullset", BLUE
+result "         ** GG target offset =" &FormatNumber(fv_N_GG_ISO-fv_GG_Target_ISO,0) & " rpm", REPORT & "Fullset", RED
+result "     * GG speed ISO =" &fv_N_PT_ISO &" rpm", REPORT & "Fullset", BLUE
+result "         ** GG target offset =" &FormatNumber(fv_N_PT_ISO-fv_PT_Target_ISO,0) & " rpm", REPORT & "Fullset", RED
+result "     * Power ISO =" &fv_Pow_ISO &" kW", REPORT & "Fullset", BLUE
+result "     * Efficiency ISO =" &fv_Eta_ISO &" %", REPORT & "Fullset", BLUE
+result "     * T4 ISO =" &fv_T4_ISO &" degC", REPORT & "Fullset", BLUE
+set_channel Recording_Status, 0
+result "Fullset recording completed."
+
+
+'********** Point completed **********
+
+note "8- Point completed"
+set_channel PointCompleted_Status, 1
+delay 5
+result "Thermodynamic measurement GG3_PT3 completed", REPORT & "Fullset", GREEN
+set_channel PointCompleted_Status, 0
+result " ", REPORT
+result " ", REPORT
+
+
+
+'******************************************************************************
+'************************************ TO GG3 PT4 ******************************xxx
+'******************************************************************************
+
+
+instruction "*** Go to GG3_PT4", skip
+
+
+'********** ISO speed targets **********
+
+note "1- Set ISO GG speed and ISO PT speed targets"
+result "Setting ISO GG1 speed and ISO PT1 speed targets..."
+set_channel GG_PT_Selector, 11
+do_fullset 0
+result "Going to GG speed ISO target = " &cv_GG_Target_ISO &" rpm and PT speed ISO target = " &cv_PT_Target_ISO &" rpm", REPORT & "Set Point", BLACK
+delay 5
+
+
+'********** Mechanical PT speed targets **********
+
+note "2- Estimate Mechanical PT Speed target"
+result "Estimating Mechanical PT Speed target ..."
+do_fullset 0
+result "     * Estimated PT speed target = " &cv_PT_Target &" rpm", REPORT & "Set Point", BLUE
+delay 5
+
+
+'********** Send Mechanical PT speed set point to FCS **********
+
+note "3- Send Mechanical PT speed set point to FCS"
+result "Sending Mechanical PT speed set point to FCS..."
+set_channel FCS_N_PT_Set_Cmd, cv_PT_Target
+result "Speed set point to FCS sent."
+
+
+'********** Wait for GT Engine to reach ISO PT speed target **********
+
+note "4- Wait GT Engine to reach ISO PT speed target"
+result "Waiting GT Engine to reach ISO PT speed target..."
+wait "N_PT_ISO = " &cv_PT_Target_ISO, 300, 5, TOC, 5, "Timout", SKIP, "PT is out of range"
+result "Speed target monitoring completed."
+
+'********** Buzzer indication **********
+
+note "5- Buzzer"
+result "Buzzing..."
+set_channel Buzzer_Enable_SW, 1
+delay 1
+set_channel Buzzer_Enable_SW, 0
+result "Buzzer OFF"
+
+
+'********** Stabilization duration **********
+
+note "6- Stabilization"
+result "Stabilizing..."
+set_channel Stabilization_Status, 1
+result "Stabilizing - Minimum 3 minutes ...", REPORT & "Stabilization", BLACK
+delay 240
+result "Stabilization completed", REPORT & "Stabilization", GREEN
+set_channel Stabilization_Status, 0
+result "Stabilization completed."
+
+
+'********** Fullset recording **********
+
+note "7- Record Steady-State measurement (fullset)"
+result "Recording Steady-State measurement (fullset)..."
+set_channel Recording_Status, 1
+delay 1
+do_fullset 10, "Thermodynamic measurement: N_GG3 N_PT4", "GG3_PT4"
+result "A steady-state measurement has been taken automatically", REPORT & "Fullset", BLACK
+result "     * GG speed ISO =" &fv_N_GG_ISO &" rpm", REPORT & "Fullset", BLUE
+result "         ** GG target offset =" &FormatNumber(fv_N_GG_ISO-fv_GG_Target_ISO,0) & " rpm", REPORT & "Fullset", RED
+result "     * GG speed ISO =" &fv_N_PT_ISO &" rpm", REPORT & "Fullset", BLUE
+result "         ** GG target offset =" &FormatNumber(fv_N_PT_ISO-fv_PT_Target_ISO,0) & " rpm", REPORT & "Fullset", RED
+result "     * Power ISO =" &fv_Pow_ISO &" kW", REPORT & "Fullset", BLUE
+result "     * Efficiency ISO =" &fv_Eta_ISO &" %", REPORT & "Fullset", BLUE
+result "     * T4 ISO =" &fv_T4_ISO &" degC", REPORT & "Fullset", BLUE
+set_channel Recording_Status, 0
+result "Fullset recording completed."
+
+
+'********** Point completed **********
+
+note "8- Point completed"
+set_channel PointCompleted_Status, 1
+delay 5
+result "Thermodynamic measurement GG3_PT4 completed", REPORT & "Fullset", GREEN
+set_channel PointCompleted_Status, 0
+result " ", REPORT
+result " ", REPORT
+
+
+
+'******************************************************************************
+'************************* GG MAX POWER > GG4+100rpm ****************************
+'******************************************************************************
 
 
 
